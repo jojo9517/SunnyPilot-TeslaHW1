@@ -30,13 +30,16 @@ jobs:
     # Step 2: Inject the correct GitLab LFS endpoints into your workspace
     - name: Configure GitLab LFS Endpoints
       run: |
-        # Completely remove all GitHub authentication headers to prevent leaking them to GitLab
-
+        # Explicitly remove the extra GitHub authorization headers to prevent leaks
         git config --global --unset-all http.https://github.com || true
         git config --unset-all http.https://github.com || true
 
-        # Explicitly tell Git NOT to use any extra headers or credentials for GitLab
-        git config --global http.https://com.extraheader ""
+        # Configure Git to treat GitLab LFS as an unauthenticated, public repository
+        git config --global lfs.https://gitlab.com "basic"
+        git config --global lfs.https://gitlab.com "basic"
+
+        # Prevent Git from asking for credentials on these domains
+        git config --global credential.https://com.helper ""
 
         # Set the main sunnypilot LFS endpoint
         git config lfs.url "https://gitlab.com"
