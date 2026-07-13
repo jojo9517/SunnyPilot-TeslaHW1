@@ -1,11 +1,12 @@
 name: prebuilt
 on:
+  push:
+    branches: [ '**' ] # Triggers automatically on any branch push in your fork for testing
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
 
 env:
-  # Sicherer Login über die Standard-Eingabe (verhindert Passwort-Logs)
   DOCKER_LOGIN_CMD: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
   BUILD_SCRIPT: release/ci/docker_build_sp.sh
 
@@ -13,7 +14,6 @@ jobs:
   build_prebuilt:
     name: build prebuilt
     runs-on: ubuntu-latest
-    # if: github.repository == 'sunnypilot/sunnypilot'
     env:
       PUSH_IMAGE: true
     permissions:
@@ -21,57 +21,24 @@ jobs:
       contents: read
       packages: write
     steps:
+    # Step 1: Force Git LFS to pull assets directly from the upstream repository
+    - name: Configure Git LFS Upstream URL
+      run: |
+        git config --global lfs.url "https://github.com"
+
+    # Step 2: Run repository checkout
     - uses: actions/checkout@v6
       with:
+        repository: 'P6g9YHK6/SunnyPilot-TeslaHW1' # Fetches code from the original repository base
+        ref: ${{ github.ref_name }}                # Automatically resolves to your current active branch name
         submodules: true
-        lfs: true # Lädt Git LFS Dateien direkt sauber und automatisch mit!
+        lfs: true                                  # Fetches LFS assets successfully using the upstream URL configured above
         token: ${{ secrets.GITHUB_TOKEN }}
 
+    # Step 3: Compile and publish the container
     - name: Build and Push docker image
       run: |
-        # Führt den Login-Befehl aus
         $DOCKER_LOGIN_CMD
-
-        # Macht das Skript ausführbar und startet es sauber
         chmod +x $BUILD_SCRIPT
         ./$BUILD_SCRIPT
 
-# name: prebuilt
-# on:
-#   schedule:
-#     - cron: '0 * * * *'
-#   workflow_dispatch:
-
-# env:
-#   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-#   BUILD: release/ci/docker_build_sp.sh
-
-# jobs:
-#   build_prebuilt:
-#     name: build prebuilt
-#     runs-on: ubuntu-latest
-#     # if: github.repository == 'sunnypilot/sunnypilot'
-#     env:
-#       PUSH_IMAGE: true
-#     permissions:
-#       checks: read
-#       contents: read
-#       packages: write
-#     steps:
-#     # - name: Wait for green check mark
-#     #   if: ${{ github.event_name != 'workflow_dispatch' }}
-#     #   uses: lewagon/wait-on-check-action@ccfb013c15c8afb7bf2b7c028fb74dc5a068cccc
-#     #   with:
-#     #     ref: master
-#     #     wait-interval: 30
-#     #     running-workflow-name: 'build prebuilt'
-#     #     repo-token: ${{ secrets.GITHUB_TOKEN }}
-#     #     check-regexp: ^((?!.*(build master-ci|create badges).*).)*$
-#     - uses: actions/checkout@v6
-#       with:
-#         submodules: true
-#     - run: git lfs pull
-#     - name: Build and Push docker image
-#       run: |
-#         $DOCKER_LOGIN
-#         eval "$BUILD"
