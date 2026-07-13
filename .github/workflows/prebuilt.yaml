@@ -21,24 +21,35 @@ jobs:
       contents: read
       packages: write
     steps:
-    # Step 1: Run repository checkout using YOUR fork and YOUR active branch
+    # Step 1: Run repository checkout using your fork (LFS off initially)
     - uses: actions/checkout@v6
       with:
         submodules: true
-        lfs: false # Disable LFS initialization during the initial checkout to prevent the 404 crash
+        lfs: false
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    # Step 2: Manually inject the upstream LFS URL into the local repository configuration
-    - name: Configure Git LFS Upstream URL
+    # Step 2: Inject the correct GitLab LFS endpoints into your workspace
+    - name: Configure GitLab LFS Endpoints
       run: |
-        git config lfs.url "https://github.com"
+        # Clear any potential token headers leaking into external networks
+        git config --unset-all http.https://github.com || true
 
-    # Step 3: Pull the LFS files directly from the working upstream server now that the path is redirected
-    - name: Pull Git LFS Assets
+        # Set the main sunnypilot LFS endpoint
+        git config lfs.url "https://gitlab.com/sunnypilot/public/sunnypilot-new-lfs.git/info/lfs"
+
+    # Step 3: Fetch the assets from GitLab
+    - name: Pull Sunnypilot LFS Assets
       run: |
         git lfs pull
 
-    # Step 4: Compile and publish the container
+    # Step 4: Fallback configuration for missing comma/openpilot elements if required
+    # Some older or basic layers require the base openpilot weights from commaai
+    - name: Pull Comma Openpilot LFS Assets (Fallback)
+      run: |
+        git config lfs.url "https://gitlab.com/commaai/openpilot-lfs.git/info/lfs"
+        git lfs pull || echo "No extra comma LFS objects needed or some skipped."
+
+    # Step 5: Compile and publish the container to your GitHub Container Registry
     - name: Build and Push docker image
       run: |
         $DOCKER_LOGIN_CMD
