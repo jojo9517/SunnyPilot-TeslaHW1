@@ -30,11 +30,17 @@ jobs:
     # Step 2: Inject the correct GitLab LFS endpoints into your workspace
     - name: Configure GitLab LFS Endpoints
       run: |
-        # Clear any potential token headers leaking into external networks
+        # Completely remove all GitHub authentication headers to prevent leaking them to GitLab
+
+        git config --global --unset-all http.https://github.com || true
         git config --unset-all http.https://github.com || true
+
+        # Explicitly tell Git NOT to use any extra headers or credentials for GitLab
+        git config --global http.https://com.extraheader ""
 
         # Set the main sunnypilot LFS endpoint
         git config lfs.url "https://gitlab.com"
+
 
     # Step 3: Fetch the assets from GitLab
     - name: Pull Sunnypilot LFS Assets
