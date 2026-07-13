@@ -6,7 +6,10 @@ OPENPILOT_DIR=$SCRIPT_DIR/../../
 
 DOCKER_IMAGE=sunnypilot
 DOCKER_FILE=Dockerfile.openpilot
-DOCKER_REGISTRY=ghcr.io/sunnypilot
+# Nutzt den aktuellen GitHub-Besitzer, konvertiert in Kleinbuchstaben (Docker verlangt Kleinbuchstaben)
+REPO_OWNER=$(echo "${GITHUB_REPOSITORY_OWNER:-sunnypilot}" | tr '[:upper:]' '[:lower:]')
+DOCKER_REGISTRY=ghcr.io/$REPO_OWNER
+
 COMMIT_SHA=$(git rev-parse HEAD)
 
 if [ -n "$TARGET_ARCHITECTURE" ]; then
