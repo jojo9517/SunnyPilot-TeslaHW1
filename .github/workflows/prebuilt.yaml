@@ -25,6 +25,7 @@ jobs:
       with:
         submodules: true
         lfs: true # Lädt Git LFS Dateien direkt sauber und automatisch mit!
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build and Push docker image
       run: |
