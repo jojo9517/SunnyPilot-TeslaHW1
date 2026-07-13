@@ -52,6 +52,6 @@ jobs:
     # Fixed: Token authentication is now performed directly inside the run block
     - name: Build and Push docker image
       run: |
-        echo "${{ secrets.PREBUILD_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        echo "${{ secrets.PREBUILT_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
         chmod +x $BUILD_SCRIPT
         ./$BUILD_SCRIPT
