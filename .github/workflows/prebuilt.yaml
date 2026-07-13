@@ -21,24 +21,26 @@ jobs:
       contents: read
       packages: write
     steps:
-    # Step 1: Force Git LFS to pull assets directly from the upstream repository
-    - name: Configure Git LFS Upstream URL
-      run: |
-        git config --global lfs.url "https://github.com"
-
-    # Step 2: Run repository checkout
+    # Step 1: Run repository checkout using YOUR fork and YOUR active branch
     - uses: actions/checkout@v6
       with:
-        repository: 'P6g9YHK6/SunnyPilot-TeslaHW1' # Fetches code from the original repository base
-        ref: ${{ github.ref_name }}                # Automatically resolves to your current active branch name
         submodules: true
-        lfs: true                                  # Fetches LFS assets successfully using the upstream URL configured above
+        lfs: false # Disable LFS initialization during the initial checkout to prevent the 404 crash
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    # Step 3: Compile and publish the container
+    # Step 2: Manually inject the upstream LFS URL into the local repository configuration
+    - name: Configure Git LFS Upstream URL
+      run: |
+        git config lfs.url "https://github.com"
+
+    # Step 3: Pull the LFS files directly from the working upstream server now that the path is redirected
+    - name: Pull Git LFS Assets
+      run: |
+        git lfs pull
+
+    # Step 4: Compile and publish the container
     - name: Build and Push docker image
       run: |
         $DOCKER_LOGIN_CMD
         chmod +x $BUILD_SCRIPT
         ./$BUILD_SCRIPT
-
