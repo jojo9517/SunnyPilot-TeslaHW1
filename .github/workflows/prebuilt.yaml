@@ -7,7 +7,6 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_LOGIN_CMD: echo "${{ secrets.PREBUILT_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
   BUILD_SCRIPT: release/ci/docker_build_sp.sh
 
 jobs:
@@ -35,7 +34,7 @@ jobs:
         git config --unset-all http.https://github.com || true
 
         # Set the main sunnypilot LFS endpoint
-        git config lfs.url "https://gitlab.com/sunnypilot/public/sunnypilot-new-lfs.git/info/lfs"
+        git config lfs.url "https://gitlab.com"
 
     # Step 3: Fetch the assets from GitLab
     - name: Pull Sunnypilot LFS Assets
@@ -43,15 +42,15 @@ jobs:
         git lfs pull
 
     # Step 4: Fallback configuration for missing comma/openpilot elements if required
-    # Some older or basic layers require the base openpilot weights from commaai
     - name: Pull Comma Openpilot LFS Assets (Fallback)
       run: |
-        git config lfs.url "https://gitlab.com/commaai/openpilot-lfs.git/info/lfs"
+        git config lfs.url "https://gitlab.com"
         git lfs pull || echo "No extra comma LFS objects needed or some skipped."
 
     # Step 5: Compile and publish the container to your GitHub Container Registry
     - name: Build and Push docker image
       run: |
-        $DOCKER_LOGIN_CMD
+        # The secret is fully accessible directly inside the run command block
+        echo "${{ secrets.PREBUILD_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
         chmod +x $BUILD_SCRIPT
         ./$BUILD_SCRIPT
